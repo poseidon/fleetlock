@@ -1,0 +1,197 @@
+package fleetlock
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+)
+
+// Config configures a Fleetlock server.
+type Config struct {
+	// logger
+	Logger *logrus.Logger
+}
+
+// Server implements the FleetLock protocol.
+type Server struct {
+	// logger
+	log *logrus.Logger
+
+	// Kubernetes
+	namespace  string
+	kubeClient kubernetes.Interface
+}
+
+// NewServer returns a new fleetlock Server handler
+func NewServer(config *Config) (http.Handler, error) {
+	if config.Logger == nil {
+		return nil, fmt.Errorf("fleetlock: Logger must not be nil")
+	}
+
+	// set via downward API
+	namespace := os.Getenv("NAMESPACE")
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	// set for development
+	kubeconfigPath := os.Getenv("KUBECONFIG")
+
+	// Kubernetes client from kubeconfig or service account (in-cluster)
+	kubeClient, err := newKubeClient(kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("fleetlock: error creating Kubernetes client: %v", err)
+	}
+
+	s := &Server{
+		log:        config.Logger,
+		namespace:  namespace,
+		kubeClient: kubeClient,
+	}
+
+	mux := http.NewServeMux()
+	chain := func(next http.Handler) http.Handler {
+		return POSTHandler(HeaderHandler(fleetLockHeaderKey, "true", next))
+	}
+	mux.Handle("/v1/pre-reboot", chain(http.HandlerFunc(s.lock)))
+	mux.Handle("/v1/steady-state", chain(http.HandlerFunc(s.unlock)))
+	mux.Handle("/-/healthy", healthHandler())
+	return mux, nil
+}
+
+// newRebootLease creates a reboot lease.
+func (s *Server) newRebootLease(group string) *RebootLease {
+	return &RebootLease{
+		Meta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("fleetlock-%s", group),
+			Namespace: s.namespace,
+		},
+		Client: s.kubeClient.CoordinationV1(),
+	}
+}
+
+// lock attempts to obtain a reboot lease lock.
+func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
+	// decode Message from request
+	msg, err := decodeMessage(w, req)
+	if err != nil {
+		s.log.Errorf("fleetlock: error decoding message: %v", err)
+		http.Error(w, "error decoding message", http.StatusBadRequest)
+	}
+	id := msg.ClientParmas.ID
+	group := msg.ClientParmas.Group
+	rebootLease := s.newRebootLease(group)
+
+	fields := logrus.Fields{
+		"id":    id,
+		"group": group,
+	}
+
+	s.log.WithFields(fields).Info("fleetlock: attempt reboot lease lock")
+
+	// get or create a reboot lease
+	ctx := context.Background()
+	lock, err := rebootLease.Get(ctx)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			s.log.Errorf("fleetlock: error getting reboot lease %s: %v", rebootLease.Name(), err)
+			http.Error(w, "error getting reboot lease", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fields["holder"] = lock.Holder
+
+	// reboot lease already owned by node
+	if lock.Holder == id {
+		s.log.WithFields(fields).Info("fleetlock: retained reboot lease")
+		fmt.Fprint(w, "retained reboot lease")
+		return
+	}
+
+	// reboot lease available
+	if lock.Holder == "" {
+		// obtain the reboot lease lock
+		s.log.WithFields(fields).Info("fleetlock: reboot lease available, attempt")
+		update := &RebootLock{
+			Holder:           id,
+			LeaseTransitions: lock.LeaseTransitions + 1,
+		}
+		if err := rebootLease.Update(ctx, update); err == nil {
+			s.log.WithFields(fields).Info("fleetlock: obtained reboot lease")
+			fmt.Fprintf(w, "obtained reboot lease")
+			return
+		}
+		s.log.WithFields(fields).Errorf("fleetlock: error obtaining reboot lease: %v", err)
+	}
+
+	// reboot lease held by different node
+	s.log.WithFields(fields).Info("fleetlock: reboot lease unavailable")
+	http.Error(w, fmt.Sprintf("reboot lease unavailable, held by %s", lock.Holder), http.StatusLocked)
+}
+
+// unlock attempts to release a reboot lease lock.
+func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
+	// decode Message from request
+	msg, err := decodeMessage(w, req)
+	if err != nil {
+		s.log.Errorf("fleetlock: error decoding message: %v", err)
+		http.Error(w, "error decoding message", http.StatusBadRequest)
+		return
+	}
+	id := msg.ClientParmas.ID
+	group := msg.ClientParmas.Group
+	rebootLease := s.newRebootLease(group)
+
+	fields := logrus.Fields{
+		"id":    id,
+		"group": group,
+	}
+
+	s.log.WithFields(fields).Info("fleetlock: attempt reboot lease unlock")
+
+	// get or create a reboot lease
+	ctx := context.Background()
+	lock, err := rebootLease.Get(ctx)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			s.log.Errorf("fleetlock: error getting reboot lease %s: %v", rebootLease.Name(), err)
+			http.Error(w, "error getting reboot lease", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// reboot lease is owned by node
+	if lock.Holder == id {
+		// release reboot lease lock
+		s.log.WithFields(fields).Info("fleetlock: unlock reboot lease")
+		update := &RebootLock{
+			Holder:           "",
+			LeaseTransitions: lock.LeaseTransitions,
+		}
+		err = rebootLease.Update(ctx, update)
+		if err != nil {
+			s.log.WithFields(fields).Errorf("fleetlock: error unlocking reboot lease: %v", err)
+			http.Error(w, "error unlocking reboot lease", http.StatusInternalServerError)
+			return
+		}
+		s.log.WithFields(fields).Info("fleetlock: unlocked reboot lease")
+	}
+
+	// either unlocked or didn't hold
+	fmt.Fprintf(w, "unlocked reboot lease for %s", lock.Holder)
+}
+
+// healthHandler handles liveness checks with an ok status response.
+func healthHandler() http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprintf(w, "ok")
+	}
+	return http.HandlerFunc(fn)
+}
