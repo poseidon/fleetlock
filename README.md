@@ -23,7 +23,7 @@ storage:
 Apply the `fleetlock` Deployment, Service (with ClusterIP), and ServiceAccount.
 
 ```
-kubectl apply -f examples/
+kubectl apply -f examples/k8s
 ```
 
 Inspect the fleetlock Lease object.

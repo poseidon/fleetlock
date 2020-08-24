@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleetlock
+spec:
+  type: ClusterIP
+  clusterIP: 10.3.0.15
+  selector:
+    name: fleetlock
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+

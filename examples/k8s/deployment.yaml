@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleetlock
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: fleetlock
+  template:
+    metadata:
+      labels:
+        name: fleetlock
+    spec:
+      serviceAccountName: fleetlock
+      containers:
+        - name: fleetlock
+          image: quay.io/poseidon/fleetlock:v0.1.0
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 30m
+              memory: 30Mi
+            limits:
+              cpu: 50m
+              memory: 50Mi
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              port: 8080
+              path: /-/healthy
+
