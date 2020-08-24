@@ -6,8 +6,8 @@ DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 VERSION=$(shell git describe --tags --match=v* --always --abbrev=0 --dirty)
 
 REPO=github.com/poseidon/fleetlock
-LOCAL_REPO=dghubble/fleetlock
-IMAGE_REPO=quay.io/dghubble/fleetlock
+LOCAL_REPO=poseidon/fleetlock
+IMAGE_REPO=quay.io/poseidon/fleetlock
 
 LD_FLAGS="-w -X $(REPO)/cmd.version=$(VERSION)"
 
