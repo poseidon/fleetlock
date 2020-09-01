@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/poseidon/fleetlock"
+	fleetlock "github.com/poseidon/fleetlock/internal"
 )
 
 var (
