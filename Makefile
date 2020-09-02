@@ -3,7 +3,7 @@ export GO111MODULE=on
 export GOFLAGS=-mod=vendor
 
 DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-VERSION=$(shell git describe --tags --match=v* --always --abbrev=0 --dirty)
+VERSION=$(shell git describe --tags --match=v* --always --dirty)
 
 REPO=github.com/poseidon/fleetlock
 LOCAL_REPO=poseidon/fleetlock
