@@ -2,6 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fleetlock
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8080'
 spec:
   type: ClusterIP
   clusterIP: 10.3.0.15

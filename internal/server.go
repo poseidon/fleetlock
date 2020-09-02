@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +24,8 @@ type Config struct {
 type Server struct {
 	// logger
 	log *logrus.Logger
+	// metrics
+	metrics *metrics
 
 	// Kubernetes
 	namespace  string
@@ -31,7 +35,7 @@ type Server struct {
 // NewServer returns a new fleetlock Server handler
 func NewServer(config *Config) (http.Handler, error) {
 	if config.Logger == nil {
-		return nil, fmt.Errorf("fleetlock: Logger must not be nil")
+		return nil, fmt.Errorf("fleetlock: logger must not be nil")
 	}
 
 	// set via downward API
@@ -49,8 +53,25 @@ func NewServer(config *Config) (http.Handler, error) {
 		return nil, fmt.Errorf("fleetlock: error creating Kubernetes client: %v", err)
 	}
 
+	// create prometheus registry
+	registry := prometheus.NewPedanticRegistry()
+	err = registerAll(registry,
+		prometheus.NewGoCollector(),
+		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("fleetlock: register collectors error: %v", err)
+	}
+
+	metrics := newMetrics()
+	err = metrics.Register(registry)
+	if err != nil {
+		return nil, fmt.Errorf("fleetlock: register metrics error: %v", err)
+	}
+
 	s := &Server{
 		log:        config.Logger,
+		metrics:    metrics,
 		namespace:  namespace,
 		kubeClient: kubeClient,
 	}
@@ -61,6 +82,7 @@ func NewServer(config *Config) (http.Handler, error) {
 	}
 	mux.Handle("/v1/pre-reboot", chain(http.HandlerFunc(s.lock)))
 	mux.Handle("/v1/steady-state", chain(http.HandlerFunc(s.unlock)))
+	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	mux.Handle("/-/healthy", healthHandler())
 	return mux, nil
 }
@@ -94,6 +116,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	}
 
 	s.log.WithFields(fields).Info("fleetlock: attempt reboot lease lock")
+	s.metrics.lockRequests.Inc()
 
 	// get or create a reboot lease
 	ctx := context.Background()
@@ -125,6 +148,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 		}
 		if err := rebootLease.Update(ctx, update); err == nil {
 			s.log.WithFields(fields).Info("fleetlock: obtained reboot lease")
+			s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(1)
 			fmt.Fprintf(w, "obtained reboot lease")
 			return
 		}
@@ -155,6 +179,7 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 	}
 
 	s.log.WithFields(fields).Info("fleetlock: attempt reboot lease unlock")
+	s.metrics.unlockRequests.Inc()
 
 	// get or create a reboot lease
 	ctx := context.Background()
@@ -181,6 +206,8 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, "error unlocking reboot lease", http.StatusInternalServerError)
 			return
 		}
+		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
+		s.metrics.lockTransitions.With(prometheus.Labels{"group": group}).Inc()
 		s.log.WithFields(fields).Info("fleetlock: unlocked reboot lease")
 	}
 

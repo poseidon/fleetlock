@@ -2,6 +2,10 @@
 
 Notable changes between versions.
 
+## Latest
+
+* Add Prometheus `/metrics` endpoint with Go, process, and fleetlock metrics
+
 ## v0.1.0
 
 * Implement the FleetLock protocol backed by Kubernetes coordination API
