@@ -8,9 +8,8 @@ import (
 type metrics struct {
 	lockState       *prometheus.GaugeVec
 	lockTransitions *prometheus.GaugeVec
-
-	lockRequests   prometheus.Counter
-	unlockRequests prometheus.Counter
+	lockRequests    prometheus.Counter
+	unlockRequests  prometheus.Counter
 }
 
 // newMetrics creates fleetlock Prometheus metrics.

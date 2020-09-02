@@ -79,6 +79,17 @@ $ kubectl get leases
 $ kubectl delete lease fleetlock-default
 ```
 
+## Metrics
+
+`fleetlock` serves Prometheus `/metrics` from Go, process, and custom collectors.
+
+| name                 | description                                         |
+|----------------------|-----------------------------------------------------|
+| fleetlock_lock_state | State of the fleetlock lease (0 unlocked, 1 locked) |
+| fleetlock_lock_transition_count | Number of fleetlock lease transitions    |
+| fleetlock_lock_request_count   | Number of lock requests   |
+| fleetlock_unlock_request_count | Number of unlock requests |
+
 ## Development
 
 To develop locally, build and run the executable.

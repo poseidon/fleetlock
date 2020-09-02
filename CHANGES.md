@@ -4,7 +4,7 @@ Notable changes between versions.
 
 ## Latest
 
-* Add Prometheus `/metrics` endpoint with Go, process, and fleetlock metrics
+* Add Prometheus `/metrics` endpoint ([#4](https://github.com/poseidon/fleetlock/pull/4))
 
 ## v0.1.0
 
