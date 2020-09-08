@@ -54,7 +54,7 @@ func NewServer(config *Config) (http.Handler, error) {
 	}
 
 	// create prometheus registry
-	registry := prometheus.NewPedanticRegistry()
+	registry := prometheus.NewRegistry()
 	err = registerAll(registry,
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
