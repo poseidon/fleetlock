@@ -9,7 +9,7 @@ REPO=github.com/poseidon/fleetlock
 LOCAL_REPO=poseidon/fleetlock
 IMAGE_REPO=quay.io/poseidon/fleetlock
 
-LD_FLAGS="-w -X $(REPO)/cmd.version=$(VERSION)"
+LD_FLAGS="-w -X main.version=$(VERSION)"
 
 .PHONY: all
 all: build test vet lint fmt
