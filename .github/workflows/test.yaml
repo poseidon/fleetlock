@@ -1,5 +1,4 @@
-name: go
-
+name: test
 on:
   push:
     branches:
@@ -7,18 +6,14 @@ on:
   pull_request:
     branches:
       - master
-
 jobs:
   build:
-    name: test
+    name: go
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        go:
-          - '1.13'
-          - '1.14'
-          - '1.15'
+        go: ['1.13', '1.14', '1.15']
     steps:
       - name: setup
         uses: actions/setup-go@v2
