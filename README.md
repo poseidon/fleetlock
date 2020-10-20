@@ -1,6 +1,6 @@
 # fleetlock [![GoDoc](https://godoc.org/github.com/poseidon/fleetlock?status.png)](https://godoc.org/github.com/poseidon/fleetlock) [![Quay](https://img.shields.io/badge/container-quay-green)](https://quay.io/repository/poseidon/fleetlock)
 
-`fleetlock` is a reboot coordinator for Fedora CoreOS nodes in Kubernetes clusters. It implements the [FleetLock](https://github.com/coreos/airlock/pull/1/files) protocol for use as a [Zincati](https://github.com/coreos/zincati) lock [strategy](https://github.com/coreos/zincati/blob/master/docs/usage/updates-strategy.md) backend.
+`fleetlock` is a reboot coordinator for Fedora CoreOS nodes in Kubernetes clusters. It implements the [FleetLock](https://coreos.github.io/zincati/development/fleetlock/protocol/) protocol for use as a [Zincati](https://github.com/coreos/zincati) lock [strategy](https://github.com/coreos/zincati/blob/master/docs/usage/updates-strategy.md) backend.
 
 ## Usage
 
@@ -147,4 +147,4 @@ curl -H "fleet-lock-protocol: true" -d @examples/body.json http://127.0.0.1:8080
 
 * [Zincati Guide](https://docs.fedoraproject.org/en-US/fedora-coreos/auto-updates/)
 * [Zincati Docs](https://github.com/coreos/zincati/blob/master/docs/usage/updates-strategy.md)
-* [FleetLock Protocol](https://github.com/coreos/airlock/pull/1/files)
+* [FleetLock Protocol](https://coreos.github.io/zincati/development/fleetlock/protocol/)
