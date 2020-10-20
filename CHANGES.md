@@ -6,6 +6,7 @@ Notable changes between versions.
 
 * Add Prometheus `/metrics` endpoint ([#4](https://github.com/poseidon/fleetlock/pull/4))
 * Fix `-version` command output ([#6](https://github.com/poseidon/fleetlock/pull/6))
+* Use JSON output for error responses to match fleetlock specification ([#9](https://github.com/poseidon/fleetlock/pull/9))
 
 ## v0.1.0
 
