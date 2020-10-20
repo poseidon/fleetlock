@@ -15,7 +15,7 @@ type Message struct {
 }
 
 // decodeMessage decodes a Message from a request.
-func decodeMessage(w http.ResponseWriter, req *http.Request) (*Message, error) {
+func decodeMessage(req *http.Request) (*Message, error) {
 	msg := &Message{}
 	err := json.NewDecoder(req.Body).Decode(msg)
 	if err != nil {

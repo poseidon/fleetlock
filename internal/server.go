@@ -101,7 +101,7 @@ func (s *Server) newRebootLease(group string) *RebootLease {
 // lock attempts to obtain a reboot lease lock.
 func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	// decode Message from request
-	msg, err := decodeMessage(w, req)
+	msg, err := decodeMessage(req)
 	if err != nil {
 		s.log.Errorf("fleetlock: error decoding message: %v", err)
 		http.Error(w, "error decoding message", http.StatusBadRequest)
@@ -163,7 +163,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 // unlock attempts to release a reboot lease lock.
 func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 	// decode Message from request
-	msg, err := decodeMessage(w, req)
+	msg, err := decodeMessage(req)
 	if err != nil {
 		s.log.Errorf("fleetlock: error decoding message: %v", err)
 		http.Error(w, "error decoding message", http.StatusBadRequest)
