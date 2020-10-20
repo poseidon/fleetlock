@@ -1,7 +1,6 @@
 package fleetlock
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -13,7 +12,7 @@ const (
 func POSTHandler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
-			http.Error(w, "required method POST", http.StatusMethodNotAllowed)
+			encodeReply(w, NewReply(ErrorMethodNotAllowed, "required method POST"))
 			return
 		}
 		next.ServeHTTP(w, req)
@@ -25,8 +24,7 @@ func POSTHandler(next http.Handler) http.Handler {
 func HeaderHandler(key, value string, next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		if req.Header.Get(key) != value {
-			errmsg := fmt.Sprintf("missing required header %s: %s", key, value)
-			http.Error(w, errmsg, http.StatusBadRequest)
+			encodeReply(w, NewReply(ErrorMissingHeader, "missing required header %s: %s", key, value))
 			return
 		}
 		next.ServeHTTP(w, req)
