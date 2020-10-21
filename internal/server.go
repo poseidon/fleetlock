@@ -213,7 +213,7 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// either unlocked or didn't hold
-	fmt.Fprintf(w, "unlocked reboot lease for %s", lock.Holder)
+	fmt.Fprint(w, "steady-state confirmed")
 }
 
 // healthHandler handles liveness checks with an ok status response.
