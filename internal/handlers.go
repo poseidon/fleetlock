@@ -12,7 +12,7 @@ const (
 func POSTHandler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
-			encodeReply(w, NewReply(ErrorMethodNotAllowed, "required method POST"))
+			encodeReply(w, NewReply(KindMethodNotAllowed, "required method POST"))
 			return
 		}
 		next.ServeHTTP(w, req)
@@ -24,7 +24,7 @@ func POSTHandler(next http.Handler) http.Handler {
 func HeaderHandler(key, value string, next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		if req.Header.Get(key) != value {
-			encodeReply(w, NewReply(ErrorMissingHeader, "missing required header %s: %s", key, value))
+			encodeReply(w, NewReply(KindMissingHeader, "missing required header %s: %s", key, value))
 			return
 		}
 		next.ServeHTTP(w, req)

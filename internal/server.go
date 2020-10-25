@@ -104,7 +104,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	msg, err := decodeMessage(req)
 	if err != nil {
 		s.log.Errorf("fleetlock: error decoding message: %v", err)
-		encodeReply(w, NewReply(ErrorDecodingRequest, "error decoding message"))
+		encodeReply(w, NewReply(KindDecodeError, "error decoding message"))
 	}
 	id := msg.ClientParmas.ID
 	group := msg.ClientParmas.Group
@@ -124,7 +124,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			s.log.Errorf("fleetlock: error getting reboot lease %s: %v", rebootLease.Name(), err)
-			encodeReply(w, NewReply(ErrorInternal, "error getting reboot lease"))
+			encodeReply(w, NewReply(KindInternalError, "error getting reboot lease"))
 			return
 		}
 	}
@@ -158,7 +158,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 
 	// reboot lease held by different node
 	s.log.WithFields(fields).Info("fleetlock: reboot lease unavailable")
-	encodeReply(w, NewReply(ErrorLocked, "reboot lease unavailable, held by %s", lock.Holder))
+	encodeReply(w, NewReply(KindLockHeld, "reboot lease unavailable, held by %s", lock.Holder))
 }
 
 // unlock attempts to release a reboot lease lock.
@@ -167,7 +167,7 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 	msg, err := decodeMessage(req)
 	if err != nil {
 		s.log.Errorf("fleetlock: error decoding message: %v", err)
-		encodeReply(w, NewReply(ErrorDecodingRequest, "error decoding message"))
+		encodeReply(w, NewReply(KindDecodeError, "error decoding message"))
 		return
 	}
 	id := msg.ClientParmas.ID
@@ -188,7 +188,7 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			s.log.Errorf("fleetlock: error getting reboot lease %s: %v", rebootLease.Name(), err)
-			encodeReply(w, NewReply(ErrorInternal, "error getting reboot lease"))
+			encodeReply(w, NewReply(KindInternalError, "error getting reboot lease"))
 			return
 		}
 	}
@@ -204,7 +204,7 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 		err = rebootLease.Update(ctx, update)
 		if err != nil {
 			s.log.WithFields(fields).Errorf("fleetlock: error unlocking reboot lease: %v", err)
-			encodeReply(w, NewReply(ErrorInternal, "error unlocking reboot lease"))
+			encodeReply(w, NewReply(KindInternalError, "error unlocking reboot lease"))
 			return
 		}
 		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
