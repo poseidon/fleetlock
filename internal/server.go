@@ -105,6 +105,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		s.log.Errorf("fleetlock: error decoding message: %v", err)
 		encodeReply(w, NewReply(KindDecodeError, "error decoding message"))
+		return
 	}
 	id := msg.ClientParmas.ID
 	group := msg.ClientParmas.Group
