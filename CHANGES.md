@@ -4,6 +4,8 @@ Notable changes between versions.
 
 ## Latest
 
+* Build multi-arch container images (amd64, arm64) ([#15](https://github.com/poseidon/fleetlock/pull/15))
+
 ## v0.2.0
 
 * Add Prometheus `/metrics` endpoint ([#4](https://github.com/poseidon/fleetlock/pull/4))
