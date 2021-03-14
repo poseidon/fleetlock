@@ -1,6 +1,5 @@
 export CGO_ENABLED:=0
 export GO111MODULE=on
-export GOFLAGS=-mod=vendor
 
 DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 VERSION=$(shell git describe --tags --match=v* --always --dirty)
@@ -47,15 +46,6 @@ image-%:
 	-t $(LOCAL_REPO):$(VERSION)-$* \
 	--arch $* --override-arch $* \
 	--format=docker .
-
-.PHONY: update
-update:
-	@GOFLAGS="" go get -u ./...
-	@go mod tidy
-
-.PHONY: vendor
-vendor:
-	@go mod vendor
 
 lock:
 	curl -H "fleet-lock-protocol: true" -d @examples/body.json http://127.0.0.1:8080/v1/pre-reboot
