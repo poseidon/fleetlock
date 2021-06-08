@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -56,8 +57,8 @@ func NewServer(config *Config) (http.Handler, error) {
 	// create prometheus registry
 	registry := prometheus.NewRegistry()
 	err = registerAll(registry,
-		prometheus.NewGoCollector(),
-		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("fleetlock: register collectors error: %v", err)
