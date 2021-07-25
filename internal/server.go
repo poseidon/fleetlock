@@ -137,6 +137,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	if lock.Holder == id {
 		s.log.WithFields(fields).Info("fleetlock: retained reboot lease")
 		fmt.Fprint(w, "retained reboot lease")
+		s.MatchNode(ctx, id)
 		return
 	}
 
@@ -153,6 +154,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 			s.log.WithFields(fields).Info("fleetlock: obtained reboot lease")
 			s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(1)
 			fmt.Fprintf(w, "obtained reboot lease")
+			s.MatchNode(ctx, id)
 			return
 		}
 		s.log.WithFields(fields).Errorf("fleetlock: error obtaining reboot lease: %v", err)
