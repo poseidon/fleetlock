@@ -137,7 +137,9 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	if lock.Holder == id {
 		s.log.WithFields(fields).Info("fleetlock: retained reboot lease")
 		fmt.Fprint(w, "retained reboot lease")
-		s.DrainNode(ctx, id)
+
+		// best effort, do not gate on drain succeeding
+		_ = s.DrainNode(ctx, id)
 		return
 	}
 
@@ -154,7 +156,9 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 			s.log.WithFields(fields).Info("fleetlock: obtained reboot lease")
 			s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(1)
 			fmt.Fprintf(w, "obtained reboot lease")
-			s.DrainNode(ctx, id)
+
+			// best effort, do not gate on drain succeeding
+			_ = s.DrainNode(ctx, id)
 			return
 		}
 		s.log.WithFields(fields).Errorf("fleetlock: error obtaining reboot lease: %v", err)
@@ -199,6 +203,13 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 
 	// reboot lease is owned by node
 	if lock.Holder == id {
+		err := s.UncordonNode(ctx, id)
+		if err != nil {
+			s.log.Errorf("fleetlock: error uncordoning node: %v", err)
+			encodeReply(w, NewReply(KindInternalError, "error uncordoning node"))
+			return
+		}
+
 		// release reboot lease lock
 		s.log.WithFields(fields).Info("fleetlock: unlock reboot lease")
 		update := &RebootLock{
@@ -211,10 +222,10 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 			encodeReply(w, NewReply(KindInternalError, "error unlocking reboot lease"))
 			return
 		}
+
 		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
 		s.metrics.lockTransitions.With(prometheus.Labels{"group": group}).Inc()
 		s.log.WithFields(fields).Info("fleetlock: unlocked reboot lease")
-		s.UncordonNode(ctx, id)
 	}
 
 	// either unlocked or didn't hold
