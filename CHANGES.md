@@ -4,7 +4,12 @@ Notable changes between versions.
 
 ## Latest
 
+## v0.3.0
+
+* Add support for Kubernetes node draining ([#51](https://github.com/poseidon/fleetlock/pull/51))
+* Automate base image, Go version, and module dependency updates
 * Build multi-arch container images (amd64, arm64) ([#15](https://github.com/poseidon/fleetlock/pull/15))
+* Switch to using the Prometheus `collectors` package ([#37](https://github.com/poseidon/fleetlock/pull/37))
 
 ## v0.2.0
 

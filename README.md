@@ -8,7 +8,7 @@ Zincati runs on-host (`zincati.service`). Declare a Zincati `fleet_lock` strateg
 
 ```yaml
 variant: fcos
-version: 1.0.0
+version: 1.4.0
 storage:
   files:
     - path: /etc/zincati/config.d/55-update-strategy.toml
