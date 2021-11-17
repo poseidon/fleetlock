@@ -227,7 +227,12 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 		s.log.WithFields(fields).Info("fleetlock: unlocked reboot lease")
 	}
 
-	s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
+	// if the lock holder matches the machine id or if there is no lock holder,
+	// set the lock state for the group to 0, as its available to lock.
+
+	if lock.Holder == id || lock.Holder == "" {
+		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
+	}
 	// either unlocked or didn't hold
 	fmt.Fprintf(w, "unlocked reboot lease for %s", lock.Holder)
 }
