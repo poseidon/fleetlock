@@ -4,6 +4,9 @@ Notable changes between versions.
 
 ## Latest
 
+* Reset `fleet_lock_state` gauge on first `lock` or `unlock` call ([#71](https://github.com/poseidon/fleetlock/pull/71))
+* Improve reject reply when a client attempts to unlock a lock it doesn't own ([#71](https://github.com/poseidon/fleetlock/pull/71))
+
 ## v0.3.0
 
 * Add support for Kubernetes node draining ([#51](https://github.com/poseidon/fleetlock/pull/51))

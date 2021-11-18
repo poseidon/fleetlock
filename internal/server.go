@@ -136,6 +136,7 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	// reboot lease already owned by node
 	if lock.Holder == id {
 		s.log.WithFields(fields).Info("fleetlock: retained reboot lease")
+		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(1)
 		fmt.Fprint(w, "retained reboot lease")
 
 		// best effort, do not gate on drain succeeding
@@ -165,8 +166,9 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// reboot lease held by different node
-	s.log.WithFields(fields).Info("fleetlock: reboot lease unavailable")
-	encodeReply(w, NewReply(KindLockHeld, "reboot lease unavailable, held by %s", lock.Holder))
+	s.log.WithFields(fields).Info("fleetlock: reboot lease lock unavailable")
+	s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(1)
+	encodeReply(w, NewReply(KindLockHeld, "reboot lease lock unavailable, held by %s", lock.Holder))
 }
 
 // unlock attempts to release a reboot lease lock.
@@ -226,10 +228,21 @@ func (s *Server) unlock(w http.ResponseWriter, req *http.Request) {
 		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
 		s.metrics.lockTransitions.With(prometheus.Labels{"group": group}).Inc()
 		s.log.WithFields(fields).Info("fleetlock: unlocked reboot lease")
+		fmt.Fprintf(w, "unlocked reboot lease for %s", lock.Holder)
+		return
 	}
 
-	// either unlocked or didn't hold
-	fmt.Fprintf(w, "unlocked reboot lease for %s", lock.Holder)
+	// reboot lease available
+	if lock.Holder == "" {
+		s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(0)
+		fmt.Fprint(w, "reboot lease already unlocked")
+		return
+	}
+
+	// reboot lease held by different node
+	s.log.WithFields(fields).Info("fleetlock: reboot lease unlock unavailable")
+	s.metrics.lockState.With(prometheus.Labels{"group": group}).Set(1)
+	encodeReply(w, NewReply(KindLockHeld, "reboot lease unlock unavailable, held by %s", lock.Holder))
 }
 
 // healthHandler handles liveness checks with an ok status response.
