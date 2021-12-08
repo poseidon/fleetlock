@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"fmt"
-	"strings"
 
 	"encoding/hex"
 )
@@ -42,9 +41,6 @@ func ZincatiID(machineID string) (string, error) {
 // appSpecificID computes a systemd-style app-specific identifier given a
 // machine ID and an application ID.
 func appSpecificID(machineID string, appID string) (string, error) {
-	// Remove any UUID dash formatting
-	machineID = strings.ReplaceAll(machineID, "-", "")
-
 	machineBytes, err := hex.DecodeString(machineID)
 	if err != nil {
 		return "", err

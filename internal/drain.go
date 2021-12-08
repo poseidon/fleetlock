@@ -58,7 +58,7 @@ func (s *Server) matchNode(ctx context.Context, id string) (*v1.Node, error) {
 	}
 
 	for _, node := range nodes.Items {
-		zincatiID, err := ZincatiID(node.Status.NodeInfo.SystemUUID)
+		zincatiID, err := ZincatiID(node.Status.NodeInfo.MachineID)
 		if err == nil && id == zincatiID {
 			fields["node"] = node.GetName()
 			s.log.WithFields(fields).Info("fleetlock: Zincati request matches Kubernetes node")
