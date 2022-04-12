@@ -14,8 +14,11 @@ import (
 // systemd and rust's libsystemd assign IDs as the SHA256 HMAC of the systemd
 // machine-id and the app-id.
 //
-// Kubernetes reports the systemd machine-id as the System UUID in System
-// Info. We can compute the app-specific ID as systemd or libsystemd would, in
+// Kubelet reports the systemd machine-id as the MachineID (if /etc/machine-id
+// is mounted) or as the System UUID (via sysfs /sys/class/dmi/id/product_uuid)
+// on most platforms (except Azure or bare-metal). Favor the explicit mount.
+//
+// We can compute the app-specific ID as systemd or libsystemd would, in
 // order to map Zincati node IDs to Kubernetes nodes. This is valuable to
 // provide better logs or drain nodes in advance of reboots.
 //
