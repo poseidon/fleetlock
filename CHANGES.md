@@ -4,6 +4,8 @@ Notable changes between versions.
 
 ## Latest
 
+## v0.4.0
+
 * Identify Kubelet nodes via `MachineID` instead of `SystemUUID` (**action required**) ([#96](https://github.com/poseidon/fleetlock/pull/96))
   * Host `SystemUUID` and `MachineID` are identical on most platforms, but not on Azure or bare-metal
   * Kubelet detected `SystemUUID` via sysfs, but `MachineID` requires Kubelet
