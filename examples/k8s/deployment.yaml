@@ -17,7 +17,7 @@ spec:
       serviceAccountName: fleetlock
       containers:
         - name: fleetlock
-          image: quay.io/poseidon/fleetlock:v0.3.0
+          image: quay.io/poseidon/fleetlock:v0.4.0
           ports:
             - name: http
               containerPort: 8080
