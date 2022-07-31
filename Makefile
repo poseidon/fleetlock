@@ -11,7 +11,7 @@ IMAGE_REPO=quay.io/poseidon/fleetlock
 LD_FLAGS="-w -X main.version=$(VERSION)"
 
 .PHONY: all
-all: build test vet lint fmt
+all: build test vet fmt
 
 .PHONY: build
 build: bin/fleetlock
@@ -27,10 +27,6 @@ test:
 .PHONY: vet
 vet:
 	@go vet -all ./...
-
-.PHONY: lint
-lint:
-	@golint -set_exit_status `go list ./...`
 
 .PHONY: fmt
 fmt:
