@@ -1,5 +1,4 @@
 export CGO_ENABLED:=0
-export GO111MODULE=on
 
 DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 VERSION=$(shell git describe --tags --match=v* --always --dirty)

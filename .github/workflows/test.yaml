@@ -11,15 +11,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.17', '1.18']
+        go: ['1.18', '1.19']
     steps:
       - name: setup
         uses: actions/setup-go@v3
         with:
           go-version: ${{matrix.go}}
-
-      - name: tools
-        run: go install golang.org/x/lint/golint@latest
 
       - name: checkout
         uses: actions/checkout@v3
