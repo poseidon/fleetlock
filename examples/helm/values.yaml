@@ -1,0 +1,2 @@
+#Cluster IP for the fleetlock service. Zincati talks to this IP.
+clusterIP: 10.96.0.200
