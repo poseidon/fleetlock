@@ -1,4 +1,9 @@
-# fleetlock [![GoDoc](https://pkg.go.dev/badge/github.com/poseidon/fleetlock.svg)](https://pkg.go.dev/github.com/poseidon/fleetlock) [![Quay](https://img.shields.io/badge/container-quay-green)](https://quay.io/repository/poseidon/fleetlock) [![Workflow](https://github.com/poseidon/fleetlock/actions/workflows/test.yaml/badge.svg)](https://github.com/poseidon/fleetlock/actions/workflows/test.yaml?query=branch%3Amain) [![Sponsors](https://img.shields.io/github/sponsors/poseidon?logo=github)](https://github.com/sponsors/poseidon) [![Twitter](https://img.shields.io/badge/follow-news-1da1f2?logo=twitter)](https://twitter.com/poseidonlabs)
+# fleetlock
+[![GoDoc](https://pkg.go.dev/badge/github.com/poseidon/fleetlock.svg)](https://pkg.go.dev/github.com/poseidon/fleetlock)
+[![Quay](https://img.shields.io/badge/container-quay-green)](https://quay.io/repository/poseidon/fleetlock)
+[![Workflow](https://github.com/poseidon/fleetlock/actions/workflows/test.yaml/badge.svg)](https://github.com/poseidon/fleetlock/actions/workflows/test.yaml?query=branch%3Amain)
+[![Sponsors](https://img.shields.io/github/sponsors/poseidon?logo=github)](https://github.com/sponsors/poseidon)
+[![Mastodon](https://img.shields.io/badge/follow-news-6364ff?logo=mastodon)](https://fosstodon.org/@poseidon)
 
 `fleetlock` is a reboot coordinator for Fedora CoreOS nodes in Kubernetes clusters. It implements the [FleetLock](https://coreos.github.io/zincati/development/fleetlock/protocol/) protocol for use as a [Zincati](https://github.com/coreos/zincati) lock [strategy](https://github.com/coreos/zincati/blob/master/docs/usage/updates-strategy.md) backend.
 
