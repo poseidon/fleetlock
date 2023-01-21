@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -18,13 +19,18 @@ import (
 // Config configures a Fleetlock server.
 type Config struct {
 	// logger
-	Logger *logrus.Logger
+	Logger                 *logrus.Logger
+	MaintenanceWindowStart int
+	MaintenanceWindowStop  int
 }
 
 // Server implements the FleetLock protocol.
 type Server struct {
 	// logger
 	log *logrus.Logger
+	// maintenance window options
+	maintenanceWindowStart int
+	maintenanceWindowStop  int
 	// metrics
 	metrics *metrics
 
@@ -71,10 +77,12 @@ func NewServer(config *Config) (http.Handler, error) {
 	}
 
 	s := &Server{
-		log:        config.Logger,
-		metrics:    metrics,
-		namespace:  namespace,
-		kubeClient: kubeClient,
+		log:                    config.Logger,
+		maintenanceWindowStart: config.MaintenanceWindowStart,
+		maintenanceWindowStop:  config.MaintenanceWindowStop,
+		metrics:                metrics,
+		namespace:              namespace,
+		kubeClient:             kubeClient,
 	}
 
 	mux := http.NewServeMux()
@@ -115,6 +123,37 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 	fields := logrus.Fields{
 		"id":    id,
 		"group": group,
+	}
+
+	if s.maintenanceWindowStart != s.maintenanceWindowStop {
+		now := time.Now()
+		start := time.Date(
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			s.maintenanceWindowStart,
+			0, 0, 0,
+			now.Location(),
+		)
+		stop := time.Date(
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			s.maintenanceWindowStop,
+			0, 0, 0,
+			now.Location(),
+		)
+
+		// If our stop hour is before our start hour, that
+		// means our end hour is actually during tomorrow.
+		if stop.Before(start) {
+			stop = stop.AddDate(0, 0, 1)
+		}
+
+		if !(now.After(start) && now.Before(stop)) {
+			encodeReply(w, NewReply(KindLockHeld, "reboot lease lock unavailable, outside of maintenance window"))
+			return
+		}
 	}
 
 	s.log.WithFields(fields).Info("fleetlock: attempt reboot lease lock")
