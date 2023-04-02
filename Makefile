@@ -13,10 +13,7 @@ LD_FLAGS="-w -X main.version=$(VERSION)"
 all: build test vet fmt
 
 .PHONY: build
-build: bin/fleetlock
-
-.PHONY: bin/fleetlock
-bin/fleetlock:
+build:
 	@go build -o bin/fleetlock -ldflags $(LD_FLAGS) $(REPO)/cmd/fleetlock
 
 .PHONY: test
@@ -30,6 +27,10 @@ vet:
 .PHONY: fmt
 fmt:
 	@test -z $$(go fmt ./...)
+
+.PHONY: lint
+lint:
+	@golangci-lint run ./...
 
 .PHONY: image
 image: \
