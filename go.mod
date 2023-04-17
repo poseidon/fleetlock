@@ -6,9 +6,9 @@ require (
 	github.com/prometheus/client_golang v1.15.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
-	k8s.io/api v0.27.0
-	k8s.io/apimachinery v0.27.0
-	k8s.io/client-go v0.27.0
+	k8s.io/api v0.27.1
+	k8s.io/apimachinery v0.27.1
+	k8s.io/client-go v0.27.1
 )
 
 require (
