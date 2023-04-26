@@ -52,10 +52,24 @@ Configure the server via flags.
 
 Or via environment variables.
 
-| variable   | description            | default   |
-|------------|------------------------|-----------|
-| NAMESPACE  | Kubernetes Namespace   | "default" |
-| KUBECONFIG | Development Kubeconfig | NA        |
+| variable          | description             | default   |
+|-------------------|-------------------------|-----------|
+| NAMESPACE         | Kubernetes Namespace    | "default" |
+| KUBECONFIG        | Development Kubeconfig  | NA        |
+| PROMETHEUS_URL    | Prometheus URL          | NA        |
+| PROMETHEUS_QUERY  | Prometheus Query        | ALERTS    |
+| PROMETHEUS_FILTER | Filter for Prom. Alerts | NA        |
+
+### Prometheus
+
+If the environment variable `PROMETHEUS_URL` is set, fleetlock will query Prometheus for active alerts.
+No reboot lease will can be requested, if there are any active alerts.
+By Default it will fetch all alerts. It is possible to set the environment variable `PROMETHEUS_QUERY` to limit the fetched alerts.
+
+Example Query: `ALERTS{severity="critical",alertstate="firing"}`
+
+With `PROMETHEUS_FILTER` it is possible to filter the fetched alerts. 
+The filter is a regex and if the alert-name is matched, the alert will be exluded.
 
 ### Typhoon
 

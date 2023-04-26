@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 
+	papi "github.com/prometheus/client_golang/api"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -31,6 +33,9 @@ type Server struct {
 	// Kubernetes
 	namespace  string
 	kubeClient kubernetes.Interface
+
+	// Prometheus
+	promClient *PromClient
 }
 
 // NewServer returns a new fleetlock Server handler
@@ -75,6 +80,26 @@ func NewServer(config *Config) (http.Handler, error) {
 		metrics:    metrics,
 		namespace:  namespace,
 		kubeClient: kubeClient,
+	}
+
+	// instantiate prometheus client
+	prometheusURL := os.Getenv("PROMETHEUS_URL")
+
+	if prometheusURL != "" {
+		promClient, err := NewPromClient(papi.Config{Address: prometheusURL})
+		if err != nil {
+			return nil, fmt.Errorf("fleetlock: error creating Prometheus client: %v", err)
+		}
+
+		promClient.Query = os.Getenv("PROMETHEUS_QUERY")
+
+		if promClient.Query == "" {
+			promClient.Query = "ALERTS"
+		}
+
+		promClient.Filter = *regexp.MustCompile(os.Getenv("PROMETHEUS_FILTER"))
+
+		s.promClient = promClient
 	}
 
 	mux := http.NewServeMux()
@@ -142,6 +167,26 @@ func (s *Server) lock(w http.ResponseWriter, req *http.Request) {
 		// best effort, do not gate on drain succeeding
 		_ = s.DrainNode(ctx, id)
 		return
+	}
+
+	//check prometheus if configured
+	if s.promClient != nil {
+
+		alertNames, err := s.promClient.ActiveAlerts()
+		if err != nil {
+			s.log.WithFields(fields).Errorf("Reboot blocked: prometheus query error: %v", err)
+			encodeReply(w, NewReply(KindDecodeError, "Reboot blocked: prometheus query error: %v", err))
+			return
+		}
+		count := len(alertNames)
+		if count > 10 {
+			alertNames = append(alertNames[:10], "...")
+		}
+		if count > 0 {
+			s.log.WithFields(fields).Errorf("Reboot blocked: %d active alerts: %v", count, alertNames)
+			encodeReply(w, NewReply(KindLockHeld, "Reboot blocked by prometheus: %d active alerts: %v", count, alertNames))
+			return
+		}
 	}
 
 	// reboot lease available
