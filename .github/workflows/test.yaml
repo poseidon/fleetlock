@@ -4,3 +4,5 @@ on:
 jobs:
   go:
     uses: poseidon/.github/.github/workflows/golang-library.yaml@main
+  multiarch:
+    uses: ./.github/workflows/multiarch.yaml
