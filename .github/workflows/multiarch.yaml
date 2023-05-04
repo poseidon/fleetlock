@@ -1,0 +1,82 @@
+name: multiarch
+on:
+  workflow_call:
+    secrets:
+      QUAY_TOKEN:
+        description: 'Quay Registry push token'
+        required: false
+jobs:
+  build-amd64:
+    name: build-amd64
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Checkout repo to GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: QEMU packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Build Image
+        run: make image-amd64
+
+      - name: Quay Token
+        if: env.QUAY_TOKEN != null
+        env:
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+        run: |
+          buildah login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
+
+      - name: Push Image
+        if: github.ref == 'refs/heads/main'
+        run: |
+          make push-amd64
+
+  build-arm64:
+    name: build-arm64
+    runs-on: [self-hosted, linux, ARM64]
+    timeout-minutes: 20
+    steps:
+      # Checkout repo to GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build Image
+        run: make image-arm64
+
+      - name: Quay Token
+        if: env.QUAY_TOKEN != null
+        env:
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+        run: |
+          buildah login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
+
+      - name: Push Image
+        if: github.ref == 'refs/heads/main'
+        run: |
+          make push-arm64
+
+  manifest:
+    name: manifest
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - build-amd64
+      - build-arm64
+    steps:
+      # Checkout repo to GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Quay Token
+        if: env.QUAY_TOKEN != null
+        env:
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+        run: |
+          buildah login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
+
+      - name: Push Multi-Arch
+        run: make manifest
