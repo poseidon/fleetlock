@@ -1,8 +1,10 @@
-name: test
+name: build
 on:
   push:
 jobs:
-  go:
+  test:
     uses: poseidon/.github/.github/workflows/golang-library.yaml@main
   multiarch:
     uses: ./.github/workflows/multiarch.yaml
+    secrets:
+      QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
