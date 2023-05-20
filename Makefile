@@ -43,6 +43,10 @@ image-%:
 	--arch $* --override-arch $* \
 	--format=docker .
 
+push: \
+	push-amd64
+	push-arm64
+
 push-%:
 	buildah tag $(LOCAL_REPO):$(VERSION)-$* $(IMAGE_REPO):$(VERSION)-$*
 	buildah push --format v2s2 $(IMAGE_REPO):$(VERSION)-$*
