@@ -1,0 +1,8 @@
+name: summary
+on:
+  pull_request:
+jobs:
+  enforce:
+    uses: poseidon/matchbox/.github/workflows/wait-for-status-checks.yaml@main
+    permissions:
+      checks: read
