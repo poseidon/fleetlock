@@ -3,6 +3,8 @@ package drain
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
@@ -11,6 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	// Wait up to this amount of time for pods to be evicted from a node.
+	drainMaxWait = 60 * time.Second
 )
 
 // Config configures a Drainer.
@@ -74,6 +81,7 @@ func (d *drainer) Drain(ctx context.Context, node string) error {
 		return err
 	}
 
+	evictedPods := []string{}
 	for _, pod := range pods {
 		fields["pod"] = pod.GetName()
 		d.log.WithFields(fields).Info("drainer: evicting pod")
@@ -82,6 +90,43 @@ func (d *drainer) Drain(ctx context.Context, node string) error {
 		if err != nil {
 			d.log.WithFields(fields).Errorf("drainer: error evicting pod: %v", err)
 			return err
+		}
+		evictedPods = append(evictedPods, pod.GetName())
+	}
+
+	start := time.Now()
+	for len(evictedPods) > 0 {
+		podsDescription := ""
+		if len(evictedPods) > 5 {
+			podsDescription = strings.Join(evictedPods[:5], ", ") + " ..."
+		} else {
+			podsDescription = strings.Join(evictedPods, ", ")
+		}
+		d.log.WithFields(fields).Infof("drainer: waiting for %d pods to be evicted: %s", len(evictedPods), podsDescription)
+
+		if time.Since(start) > drainMaxWait {
+			d.log.WithFields(fields).Infof("drainer: waited maximum amount of time for evictions, continuing")
+			break
+		}
+
+		pods, err := d.getPodsForDeletion(ctx, node)
+		if err != nil {
+			d.log.WithFields(fields).Errorf("drainer: error getting pods: %v", err)
+			return err
+		}
+		podsByName := make(map[string]struct{}, len(pods))
+		for _, pod := range pods {
+			podsByName[pod.GetName()] = struct{}{}
+		}
+		remainingPods := []string{}
+		for _, pod := range evictedPods {
+			if _, ok := podsByName[pod]; ok {
+				remainingPods = append(remainingPods, pod)
+			}
+		}
+		evictedPods = remainingPods
+		if len(evictedPods) > 0 {
+			time.Sleep(1 * time.Second)
 		}
 	}
 
