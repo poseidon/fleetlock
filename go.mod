@@ -2,7 +2,7 @@ module github.com/poseidon/fleetlock
 
 go 1.24.0
 
-toolchain go1.24.2
+toolchain go1.24.3
 
 require (
 	github.com/prometheus/client_golang v1.22.0
