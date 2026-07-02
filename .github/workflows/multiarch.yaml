@@ -25,7 +25,7 @@ jobs:
         env:
           QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
         run: |
-          buildah login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
+          podman login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
 
       - name: Push Image
         if: github.ref == 'refs/heads/main'
@@ -51,7 +51,7 @@ jobs:
         env:
           QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
         run: |
-          buildah login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
+          podman login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
 
       - name: Push Image
         if: github.ref == 'refs/heads/main'
@@ -77,7 +77,7 @@ jobs:
         env:
           QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
         run: |
-          buildah login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
+          podman login -u "poseidon+github" -p "$QUAY_TOKEN" quay.io
 
       - name: Push Multi-Arch
         run: make manifest
